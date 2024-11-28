@@ -24,6 +24,6 @@ const diskStorage: StorageEngine = multer.diskStorage({
   }
 })
 
-export const fileUpload = multer({
+export const imageUpload = multer({
   storage: diskStorage
 }).single('image')

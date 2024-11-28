@@ -3,6 +3,7 @@ import {
   createCorporation,
   createGlobalApprover,
   createUser,
+  createUserByExcel,
   deleteUser,
   getGlobalApprovers,
   getUserByToken,
@@ -11,6 +12,7 @@ import {
 } from '../controllers/userController'
 import { isAuthenticated } from '../middlewares/authenticated'
 import { isValidRole } from '../middlewares/isValidRole'
+import { fileUpload } from '../middlewares/files'
 
 export const userRoute = express.Router()
 
@@ -24,6 +26,7 @@ userRoute.get('/detail', isAuthenticated, getUserByToken)
 // userRoute.post('/employee/invitation', isAuthenticated, isValidRole(['CORPORATION']), sendInvitationByCompany)
 userRoute.post('/corporation/create', isAuthenticated, isValidRole(['ADMIN']), createCorporation)
 userRoute.post('/create', isAuthenticated, isValidRole(['CORPORATION']), createUser)
+userRoute.post('/create/excel', isAuthenticated, isValidRole(['CORPORATION']), fileUpload, createUserByExcel)
 userRoute.post('/global-approver/create', isAuthenticated, isValidRole(['CORPORATION']), createGlobalApprover)
 // userRoute.post('/employee/create', createEmployeeByToken)
 

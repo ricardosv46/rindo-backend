@@ -31,4 +31,26 @@ export interface IUserRequest {
   createdBy?: string
 }
 
+export interface IUserExcelRequest {
+  email?: string
+  name?: string
+  lastname?: string
+  document?: string
+  password?: string
+  phone?: string
+  role?: string
+  createdBy?: string
+}
+
+export interface IUserExcel {
+  EMAIL?: string
+  NOMBRES?: string
+  APELLIDOS?: string
+  DOCUMENTO?: string
+  CONTRASEÑA?: string
+  CELULAR?: string
+  ROL?: string
+  ERROR?: string
+}
+
 export type Role = 'ADMIN' | 'CORPORATION' | 'SUBMITTER' | 'APPROVER' | 'GLOBAL_APPROVER'

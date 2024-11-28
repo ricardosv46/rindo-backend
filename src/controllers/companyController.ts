@@ -28,6 +28,8 @@ export const createCompany = async (req: Request, res: Response) => {
 
     const props = { name, username, password, token: tokenVouchers, ruc }
 
+    const company = await companyRepository.getByRuc(ruc)
+    if (company) return responseError('La empresa ya existe', 409)
     const { data: dataAPI } = await axios.post(`https://server-datafact.analytia.pe/api/create-userclavesol-public`, props)
 
     const tokenUserClaveSol = dataAPI?.data?.token

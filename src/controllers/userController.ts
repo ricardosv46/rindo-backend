@@ -4,6 +4,11 @@ import { generateJWT, verifyJWT } from '../helpers/jwt'
 import { responseData, responseError } from '../helpers/response'
 import { CompanyRepository } from '../repositories/companyRepository'
 import { UserRepository } from '../repositories/userRepository'
+import { readFile, utils } from 'xlsx'
+import { IUserExcel, IUserExcelRequest, IUserRequest } from '../interfaces/user'
+import { IUser, UserModel } from '../models/userSchema'
+import fs from 'fs'
+import bcrypt from 'bcrypt'
 
 const userRepository = new UserRepository()
 const companyRepository = new CompanyRepository()
@@ -120,7 +125,8 @@ export const createGlobalApprover = async (req: Request, res: Response) => {
 
     const { email, name, lastname, document, phone, password } = req.body
 
-    if (!email || !name || !lastname) return responseError('El email, nombre, apellido, dni, contraseña y el celular son obligatorios', 400)
+    if (!email || !name || !lastname || !document || !phone || !password)
+      return responseError('El email, nombre, apellido, dni, contraseña y el celular son obligatorios', 400)
 
     const user = await userRepository.getByEmail(email)
 
@@ -161,6 +167,98 @@ export const confirmAccount = async (req: Request, res: Response) => {
     user.save()
     res.json(responseData(true, 'Éxito al confirmar cuenta', { confirm: false }))
   } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
+  }
+}
+
+export const createUserByExcel = async (req: Request, res: Response) => {
+  try {
+    const createdBy = req?.user?.id!
+    const filePath = req?.file?.path ?? ''
+
+    const workbook = readFile(filePath)
+    const sheetName = workbook.SheetNames[0]
+    const sheetData = utils.sheet_to_json<IUserExcel>(workbook.Sheets[sheetName])
+    const usersEmpty: IUserExcel[] = []
+    const failedUsers: IUserExcel[] = []
+
+    const usersData = sheetData.map((i) => {
+      if (!i.EMAIL || !i.NOMBRES || !i.APELLIDOS || !i.DOCUMENTO || !i.CONTRASEÑA || !i.CELULAR || !i.ROL) {
+        usersEmpty.push(i)
+        return null
+      }
+
+      let role = ''
+      if (String(i.ROL).trim() === 'APROBADOR') role = 'APPROVER'
+
+      if (String(i.ROL).trim() === 'APROBADOR GLOBAL') role = 'GLOBAL_APPROVER'
+
+      if (String(i.ROL).trim() === 'RENDIDOR') role = 'SUBMITTER'
+
+      if (role === '') usersEmpty.push(i)
+
+      return {
+        email: String(i.EMAIL).trim() ?? '',
+        name: String(i.NOMBRES).trim() ?? '',
+        lastname: String(i.APELLIDOS).trim() ?? '',
+        document: String(i.DOCUMENTO).trim() ?? '',
+        password: String(i.CONTRASEÑA).trim() ?? '',
+        phone: String(i.CELULAR).trim() ?? '',
+        role,
+        createdBy
+      }
+    })
+
+    if (usersEmpty.length > 0 || sheetData?.length === 0) return responseError('El archivo no tiene la estructura correcta', 404)
+
+    const usersDataHashedPassword = await Promise.all(
+      usersData.map(async (i) => {
+        const salt = await bcrypt.genSalt(10)
+        const password = await bcrypt.hash(i?.password!, salt)
+        return { ...i, password }
+      })
+    )
+
+    try {
+      await userRepository.createByExcel(usersDataHashedPassword)
+    } catch (error: any) {
+      if (error?.writeErrors) {
+        error.writeErrors.forEach((writeError: any) => {
+          const failedUser = usersData[writeError.index]
+          failedUsers.push({
+            EMAIL: failedUser?.email,
+            NOMBRES: failedUser?.name,
+            APELLIDOS: failedUser?.lastname,
+            DOCUMENTO: failedUser?.document,
+            CONTRASEÑA: failedUser?.password,
+            CELULAR: failedUser?.phone,
+            ROL: failedUser?.role,
+            ERROR: writeError?.err?.code == 11000 ? 'Correo ya existe en la base de datos' : writeError?.err?.errmsg
+          })
+        })
+      }
+    }
+
+    const successUsers = usersData?.filter((user) => !failedUsers?.some((i) => i?.EMAIL === user?.email))
+
+    for (const user of successUsers) {
+      try {
+        const token = generateJWT({ email: user?.email })
+        await emailConfirmAccount({ email: user?.email, name: user?.name, token })
+      } catch (emailError) {
+        console.log({ emailError })
+      }
+    }
+
+    fs.unlinkSync(req?.file?.path!)
+
+    if (failedUsers?.length > 0) {
+      res.json(responseData(false, 'Hubo algunos errores en la carga de usuarios', failedUsers))
+    } else {
+      res.json(responseData(true, 'Usuarios creados exitosamente', successUsers))
+    }
+  } catch (error: any) {
+    fs.unlinkSync(req?.file?.path!)
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
   }
 }

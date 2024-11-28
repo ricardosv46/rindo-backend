@@ -1,4 +1,4 @@
-import mongoose, { Types, Schema } from 'mongoose'
+import mongoose, { Types, Schema, Document } from 'mongoose'
 
 export interface ICompany extends Document {
   id: string

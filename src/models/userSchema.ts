@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import mongoose, { Schema, Types } from 'mongoose'
+import mongoose, { Document, Schema, Types } from 'mongoose'
 import { ICompany } from './companySchema'
 import { Role } from '../interfaces/user'
 
