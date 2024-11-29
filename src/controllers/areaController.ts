@@ -59,17 +59,20 @@ export const deleteArea = async (req: Request, res: Response) => {
 export const addApprover = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
-
     const { approver } = req.body
 
     const data = await areaRepository.getById(id)
-    if (!data) return responseError('El area no existe', 404)
+    if (!data) return responseError('El área no existe', 404)
+
+    const existingApprover = data.approvers.find((a: { approver: string }) => a.approver.toString() === approver)
+    if (existingApprover) {
+      return responseError('El aprobador ya está agregado', 400)
+    }
 
     data.approvers = [...data.approvers, { approver, order: data.approvers.length + 1 }]
+    await data.save()
 
-    data.save()
-
-    res.json(responseData(true, 'Éxito al actualizar el area', data))
+    res.json(responseData(true, 'Éxito al actualizar el área', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
   }
@@ -83,9 +86,8 @@ export const deleteApprover = async (req: Request, res: Response) => {
 
     const data = await areaRepository.getById(id)
     if (!data) return responseError('El area no existe', 404)
-
-    data.approvers = data.approvers.filter((i) => i !== approver).map((i, index) => ({ ...i, order: index + 1 }))
-
+    const newApprovers = data.approvers.filter((i) => i.approver.toString() !== approver).map((i, index) => ({ ...i, order: index + 1 }))
+    data.approvers = newApprovers
     data.save()
 
     res.json(responseData(true, 'Éxito al actualizar el area', data))

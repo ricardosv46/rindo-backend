@@ -5,6 +5,7 @@ import {
   createUser,
   createUserByExcel,
   deleteUser,
+  downloadExcelTemplate,
   getGlobalApprovers,
   getUserByToken,
   getUsers,
@@ -27,6 +28,7 @@ userRoute.get('/detail', isAuthenticated, getUserByToken)
 userRoute.post('/corporation/create', isAuthenticated, isValidRole(['ADMIN']), createCorporation)
 userRoute.post('/create', isAuthenticated, isValidRole(['CORPORATION']), createUser)
 userRoute.post('/create/excel', isAuthenticated, isValidRole(['CORPORATION']), fileUpload, createUserByExcel)
+userRoute.get('/download/template', isAuthenticated, isValidRole(['CORPORATION']), downloadExcelTemplate)
 userRoute.post('/global-approver/create', isAuthenticated, isValidRole(['CORPORATION']), createGlobalApprover)
 // userRoute.post('/employee/create', createEmployeeByToken)
 

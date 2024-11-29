@@ -9,6 +9,7 @@ import { IUserExcel, IUserExcelRequest, IUserRequest } from '../interfaces/user'
 import { IUser, UserModel } from '../models/userSchema'
 import fs from 'fs'
 import bcrypt from 'bcrypt'
+import path from 'path'
 
 const userRepository = new UserRepository()
 const companyRepository = new CompanyRepository()
@@ -261,6 +262,37 @@ export const createUserByExcel = async (req: Request, res: Response) => {
     fs.unlinkSync(req?.file?.path!)
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
   }
+}
+
+// export const downloadExcelTemplate = (req: Request, res: Response) => {
+//   // const filePath = path.join(path.resolve(), './src/files', 'template.xlsx')
+//   const filePath = path.join(__dirname, '../files', 'template.xlsx')
+//   if (!fs.existsSync(filePath)) {
+//     return res.status(404).json({ success: false, message: 'Archivo no encontrado' })
+//   }
+
+//   // enviar el archivo como respuesta para su descarga
+//   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+//   res.setHeader('Content-Disposition', 'attachment; filename="example.xlsx"')
+
+//   const fileStream = fs.createReadStream(filePath)
+//   fileStream.pipe(res)
+
+// }
+
+export const downloadExcelTemplate = (req: Request, res: Response): void => {
+  const filePath = path.join(__dirname, '../files', 'template.xlsx')
+
+  if (!fs.existsSync(filePath)) {
+    res.status(404).json({ success: false, message: 'Archivo no encontrado' })
+  }
+
+  // Enviar el archivo como respuesta para su descarga
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  res.setHeader('Content-Disposition', 'attachment; filename="example.xlsx"')
+
+  const fileStream = fs.createReadStream(filePath)
+  fileStream.pipe(res)
 }
 
 // export const sendInvitationByCompany = async (req: Request, res: Response) => {
