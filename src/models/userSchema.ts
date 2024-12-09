@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import mongoose, { Document, Schema, Types } from 'mongoose'
 import { ICompany } from './companySchema'
 import { Role } from '../interfaces/user'
+import { IArea } from './areaSchema'
 
 export interface IUser extends Document {
   id: string
@@ -15,7 +16,7 @@ export interface IUser extends Document {
   token: string
   password: string
   company?: ICompany
-  areas: string[]
+  areas: IArea[]
   createdBy?: string
 }
 
@@ -74,7 +75,7 @@ const UserSchema = new Schema({
       default: []
     }
   ],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdBy: { type: Types.ObjectId, ref: 'User' },
   token: {
     type: String,
     trim: true,

@@ -1,8 +1,6 @@
 import multer, { StorageEngine } from 'multer'
 import path from 'path'
 
-const __dirname = path.resolve()
-
 const getExt = (nombreArchivo: string): string => {
   return path.extname(nombreArchivo).toLowerCase()
 }
@@ -18,12 +16,25 @@ const randomName = (): string => {
 }
 
 const diskStorage: StorageEngine = multer.diskStorage({
-  destination: path.join(__dirname, '../images'),
+  destination: path.join(__dirname, '../files'),
   filename: (req, file, cb) => {
     cb(null, `File_${Date.now()}_${randomName()}${getExt(file.originalname)}`)
   }
 })
 
-export const imageUpload = multer({
+export const multipleFileUpload = multer({
   storage: diskStorage
-}).single('image')
+}).fields([
+  {
+    name: 'file',
+    maxCount: 1
+  },
+  {
+    name: 'fileVisa',
+    maxCount: 1
+  },
+  {
+    name: 'fileRxh',
+    maxCount: 1
+  }
+])

@@ -29,7 +29,7 @@ const AreaSchema = new Schema({
     type: Types.ObjectId,
     ref: 'Company'
   },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdBy: { type: Types.ObjectId, ref: 'User' },
   status: {
     type: Boolean,
     default: true

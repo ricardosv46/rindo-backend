@@ -7,7 +7,6 @@ export const isValidRole = (roles: Role[]) => {
       const { role } = req?.user!
 
       if (!roles.includes(role)) {
-        console.log('afafafafafaf')
         return responseError('Tipo de usuario no autorizado para realizar esta acción', 401)
       }
       next()

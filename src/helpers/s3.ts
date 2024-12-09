@@ -1,4 +1,4 @@
-import { AWS_BUCKET_REGION, AWS_PUBLIC_KEY, AWS_SECRET_KEY, AWS_BUCKET_NAME } from '../config/credentialsS3.js'
+import { AWS_BUCKET_REGION, AWS_PUBLIC_KEY, AWS_SECRET_KEY, AWS_BUCKET_NAME } from '../config/credentialsS3'
 import fs from 'fs'
 import S3 from 'aws-sdk/clients/s3'
 import dotenv from 'dotenv'
@@ -22,7 +22,7 @@ export async function uploadFile(file: File | null): Promise<S3.ManagedUpload.Se
   try {
     if (!file) return null
 
-    const ulrlocal = `./src/images/${file.filename}`
+    const ulrlocal = `./src/files/${file.filename}`
     const stream: ReadStream = fs.createReadStream(ulrlocal)
 
     const uploadParams: S3.PutObjectRequest = {

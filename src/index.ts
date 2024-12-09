@@ -9,6 +9,7 @@ import { userRoute } from './routes/userRoute'
 import { authRoute } from './routes/authRoute'
 import { companyRoute } from './routes/companyRoute'
 import { areaRoute } from './routes/areaRoute'
+import { expenseRoute } from './routes/expenseRoute'
 
 dotenv.config()
 const app = express()
@@ -40,6 +41,7 @@ app.use('/auth', authRoute)
 app.use('/users', userRoute)
 app.use('/companies', companyRoute)
 app.use('/areas', areaRoute)
+app.use('/expenses', expenseRoute)
 
 // app.use('/spends', routerSpend)
 // app.use('/reports', routerReport)

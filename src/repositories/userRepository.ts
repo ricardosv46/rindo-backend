@@ -1,6 +1,5 @@
-import { UserModel } from '../models/userSchema'
 import { IUserExcelRequest, IUserRequest } from '../interfaces/user'
-import { Types } from 'mongoose'
+import { UserModel } from '../models/userSchema'
 
 export class UserRepository {
   async getByCorporation() {
@@ -62,10 +61,8 @@ export class UserRepository {
   async createByExcel(users: IUserExcelRequest[]) {
     try {
       const data = await UserModel.insertMany(users, { ordered: false })
-      console.log({ data })
       return data
     } catch (error) {
-      console.log({ error })
       throw error
     }
   }
