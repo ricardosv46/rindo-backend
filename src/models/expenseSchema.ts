@@ -13,9 +13,9 @@ export interface IExpense extends Document {
   date?: string
   typeDocument?: string
   createdBy?: string
-  urlFile?: string
-  urlFileVisa?: string
-  urlFileRxh?: string
+  file?: string
+  fileVisa?: string
+  fileRxh?: string
   status?: StatusExpense
   company?: string
   area?: string
@@ -58,6 +58,18 @@ const ExpenseSchema = new Schema({
     type: String,
     default: ''
   },
+  file: {
+    type: String,
+    default: ''
+  },
+  fileVisa: {
+    type: String,
+    default: ''
+  },
+  fileRxh: {
+    type: String,
+    default: ''
+  },
   date: {
     type: String,
     required: true,
@@ -72,7 +84,7 @@ const ExpenseSchema = new Schema({
   status: {
     type: String,
     enum: ['IN_REPORT', 'APPROVED', 'DRAFT', 'REJECTED', 'IN_REVISION'],
-    default: 'Borrador'
+    default: 'DRAFT'
   },
 
   createdBy: { type: Types.ObjectId, ref: 'User', required: true },

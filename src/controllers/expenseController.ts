@@ -1,12 +1,11 @@
 import { Request, Response } from 'express'
 import { responseData, responseError } from '../helpers/response'
-import { AreaRepository } from '../repositories/areaRepository'
 import { ExpenseRepository } from '../repositories/expenseRepository'
 import { uploadFile } from '../helpers/s3'
 
 const expenseRepository = new ExpenseRepository()
 
-interface MulterFiles {
+export interface MulterFiles {
   file?: Express.Multer.File[]
   fileVisa?: Express.Multer.File[]
   fileRxh?: Express.Multer.File[]
@@ -14,10 +13,17 @@ interface MulterFiles {
 
 export const getExpenses = async (req: Request, res: Response) => {
   try {
-    const { id } = req?.user
+    const { id, role } = req?.user
 
-    const data = await expenseRepository.getByCoporation(id)
-    res.json(responseData(true, 'Éxito al obtener las areas', data))
+    if (role == 'CORPORATION') {
+      const data = await expenseRepository.getByCoporation(id)
+      res.json(responseData(true, 'Éxito al obtener las areas', data))
+    }
+
+    if (role == 'SUBMITTER') {
+      const data = await expenseRepository.getByCreatedBy(id)
+      res.json(responseData(true, 'Éxito al obtener las areas', data))
+    }
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }
@@ -26,11 +32,12 @@ export const getExpenses = async (req: Request, res: Response) => {
 export const createExpense = async (req: Request, res: Response) => {
   try {
     const createdBy = req?.user?.id
+    const corporation = req?.user?.createdBy
     const area = req?.user?.areas[0]?._id
     const company = req?.user?.company?._id
-    const { ruc, companyName, description, category, total, currency, date, typeDocument } = req.body
+    const { ruc, companyName, description, category, total, currency, date, typeDocument, serie } = req.body
 
-    if (!ruc || !companyName || !description || !category || !total || !currency || !date || !typeDocument)
+    if (!ruc || !companyName || !description || !category || !total || !currency || !date || !typeDocument || !serie)
       return responseError('Ingrese todos los datos', 404)
 
     const files = req.files as unknown as MulterFiles
@@ -56,19 +63,12 @@ export const createExpense = async (req: Request, res: Response) => {
       fileRxh = upload?.Location || ''
     }
 
-    // file?: File
-    // filePreview?: string
-    // fileVisa?: File
-    // fileVisaPreview?: string
-    // fileRxh?: File
-    // fileRxhPreview?: string
-
     const props = {
       ruc,
       companyName,
       description,
       category,
-      total,
+      total: total.replace(',', ''),
       currency,
       date,
       typeDocument,
@@ -77,13 +77,14 @@ export const createExpense = async (req: Request, res: Response) => {
       company,
       file,
       fileVisa,
-      fileRxh
+      fileRxh,
+      serie,
+      corporation
     }
-    console.log({ props })
 
-    // const data = await expenseRepository.create({ ruc, companyName, description, category, total, currency, serie, date, typeDocument })
+    const data = await expenseRepository.create(props)
 
-    res.json(responseData(true, 'Éxito al crear el area', {}))
+    res.json(responseData(true, 'Éxito al crear el gasto', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
   }

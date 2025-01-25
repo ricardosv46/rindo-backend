@@ -10,6 +10,8 @@ import { authRoute } from './routes/authRoute'
 import { companyRoute } from './routes/companyRoute'
 import { areaRoute } from './routes/areaRoute'
 import { expenseRoute } from './routes/expenseRoute'
+import { getOcrData } from './controllers/ocrController'
+import { multipleFileUpload } from './middlewares/multiplefiles'
 
 dotenv.config()
 const app = express()
