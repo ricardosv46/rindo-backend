@@ -1,6 +1,5 @@
 import express from 'express'
-import { createArea } from '../controllers/areaController'
-import { createExpense, getExpenses } from '../controllers/expenseController'
+import { createExpense, deleteExpense, getExpense, getExpenses, updateExpense } from '../controllers/expenseController'
 import { isAuthenticated } from '../middlewares/authenticated'
 import { isValidRole } from '../middlewares/isValidRole'
 import { multipleFileUpload } from '../middlewares/multiplefiles'
@@ -13,3 +12,9 @@ expenseRoute.get('/', isAuthenticated, isValidRole(['CORPORATION', 'APPROVER', '
 expenseRoute.post('/create', isAuthenticated, isValidRole(['SUBMITTER']), multipleFileUpload, createExpense)
 
 expenseRoute.post('/ocr', isAuthenticated, isValidRole(['SUBMITTER']), multipleFileUpload, getOcrData)
+
+expenseRoute.delete('/:id/delete', isAuthenticated, isValidRole(['SUBMITTER']), deleteExpense)
+
+expenseRoute.get('/:id', isAuthenticated, isValidRole(['SUBMITTER']), getExpense)
+
+expenseRoute.put('/:id/update', isAuthenticated, isValidRole(['SUBMITTER']), multipleFileUpload, updateExpense)

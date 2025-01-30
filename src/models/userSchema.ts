@@ -62,7 +62,7 @@ const UserSchema = new Schema({
   role: {
     type: String,
     enum: ['ADMIN', 'CORPORATION', 'GLOBAL_APPROVER', 'APPROVER', 'SUBMITTER'],
-    default: 'Borrador'
+    default: 'SUBMITTER'
   },
   company: {
     type: Types.ObjectId,

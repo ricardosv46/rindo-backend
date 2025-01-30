@@ -1,15 +1,14 @@
+import bcrypt from 'bcrypt'
 import { Request, Response } from 'express'
-import { emailConfirmAccount, emailRegister } from '../helpers/email'
+import fs from 'fs'
+import path from 'path'
+import { readFile, utils } from 'xlsx'
+import { emailConfirmAccount } from '../helpers/email'
 import { generateJWT, verifyJWT } from '../helpers/jwt'
 import { responseData, responseError } from '../helpers/response'
+import { IUserExcel } from '../interfaces/user'
 import { CompanyRepository } from '../repositories/companyRepository'
 import { UserRepository } from '../repositories/userRepository'
-import { readFile, utils } from 'xlsx'
-import { IUserExcel, IUserExcelRequest, IUserRequest } from '../interfaces/user'
-import { IUser, UserModel } from '../models/userSchema'
-import fs from 'fs'
-import bcrypt from 'bcrypt'
-import path from 'path'
 
 const userRepository = new UserRepository()
 const companyRepository = new CompanyRepository()

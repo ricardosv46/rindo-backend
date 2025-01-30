@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { responseData, responseError } from '../helpers/response'
 import { ExpenseRepository } from '../repositories/expenseRepository'
-import { uploadFile } from '../helpers/s3'
+import { deleteFile, uploadFile } from '../helpers/s3'
 
 const expenseRepository = new ExpenseRepository()
 
@@ -9,6 +9,16 @@ export interface MulterFiles {
   file?: Express.Multer.File[]
   fileVisa?: Express.Multer.File[]
   fileRxh?: Express.Multer.File[]
+}
+
+export const getExpense = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const data = await expenseRepository.getById(id)
+    res.json(responseData(true, 'Éxito al obtener el area', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
 }
 
 export const getExpenses = async (req: Request, res: Response) => {
@@ -90,31 +100,85 @@ export const createExpense = async (req: Request, res: Response) => {
   }
 }
 
-// export const updateArea = async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params
+export const updateExpense = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
 
-//     const data = await areaRepository.update({ ...req.body, id })
-//     if (!data) return responseError('El area no existe', 404)
+    const { ruc, companyName, description, category, total, currency, date, typeDocument, serie } = req.body
 
-//     res.json(responseData(true, 'Éxito al actualizar el area', data))
-//   } catch (error: any) {
-//     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
-//   }
-// }
+    const files = req.files as unknown as MulterFiles
 
-// export const deleteArea = async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params
+    const fileUpload = files?.file
+    const fileVisaeUpload = files?.fileVisa
+    const fileRxheUpload = files?.fileRxh
 
-//     const data = await areaRepository.delete(id)
-//     if (!data) return responseError('El area no existe', 404)
+    let file: string = ''
+    let fileVisa: string = ''
+    let fileRxh: string = ''
 
-//     res.json(responseData(true, 'Éxito al eliminar area', data))
-//   } catch (error: any) {
-//     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
-//   }
-// }
+    const expense = await expenseRepository.getById(id)
+    if (!expense) return responseError('El gasto no existe', 404)
+
+    if (fileUpload) {
+      const upload = await uploadFile(fileUpload[0])
+      file = upload?.Location || ''
+    }
+    if (fileVisaeUpload) {
+      const upload = await uploadFile(fileVisaeUpload[0])
+      fileVisa = upload?.Location || ''
+    }
+    if (fileRxheUpload) {
+      const upload = await uploadFile(fileRxheUpload[0])
+      fileRxh = upload?.Location || ''
+    }
+
+    if (file && expense?.file) {
+      await deleteFile(expense?.file)
+    }
+
+    if (fileVisa && expense?.fileVisa) {
+      await deleteFile(expense?.fileVisa)
+    }
+
+    if (fileRxh && expense?.fileRxh) {
+      await deleteFile(expense?.fileRxh)
+    }
+
+    console.log({ description })
+
+    expense.ruc = ruc || expense.ruc || ''
+    expense.companyName = companyName || expense.companyName || ''
+    expense.description = description || expense.description || ''
+    expense.category = category || expense.category || ''
+    expense.total = total?.replace(',', '') || expense.total || ''
+    expense.currency = currency || expense.currency || ''
+    expense.date = date || expense.date || ''
+    expense.typeDocument = typeDocument || expense.typeDocument || ''
+    expense.serie = serie || expense.serie || ''
+    expense.file = file || expense.file || ''
+    expense.fileVisa = fileVisa || expense.fileVisa || ''
+    expense.fileRxh = fileRxh || expense.fileRxh || ''
+
+    await expense.save()
+
+    res.json(responseData(true, 'Éxito al actualizar el gasto', expense))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
+  }
+}
+
+export const deleteExpense = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const data = await expenseRepository.delete(id)
+    if (!data) return responseError('El gasto no existe', 404)
+
+    res.json(responseData(true, 'Éxito al eliminar gasto', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
+  }
+}
 
 // export const addApprover = async (req: Request, res: Response) => {
 //   try {
