@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { responseData, responseError } from '../helpers/response'
-import { ExpenseRepository } from '../repositories/expenseRepository'
 import { deleteFile, uploadFile } from '../helpers/s3'
+import { ExpenseRepository } from '../repositories/expenseRepository'
 
 const expenseRepository = new ExpenseRepository()
 
@@ -15,7 +15,7 @@ export const getExpense = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const data = await expenseRepository.getById(id)
-    res.json(responseData(true, 'Éxito al obtener el area', data))
+    res.json(responseData(true, 'Éxito al obtener el reporte', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }
@@ -27,12 +27,12 @@ export const getExpenses = async (req: Request, res: Response) => {
 
     if (role == 'CORPORATION') {
       const data = await expenseRepository.getByCoporation(id)
-      res.json(responseData(true, 'Éxito al obtener las areas', data))
+      res.json(responseData(true, 'Éxito al obtener los gastos', data))
     }
 
     if (role == 'SUBMITTER') {
       const data = await expenseRepository.getByCreatedBy(id)
-      res.json(responseData(true, 'Éxito al obtener las areas', data))
+      res.json(responseData(true, 'Éxito al obtener los gastos', data))
     }
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))

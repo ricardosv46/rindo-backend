@@ -23,6 +23,10 @@ export class ExpenseRepository {
     return await ExpenseModel.findByIdAndUpdate(expense?.id, expense, { new: true })
   }
 
+  async updateStatus(expenseIds: string[], newStatus: string) {
+    return await ExpenseModel.updateMany({ _id: { $in: expenseIds } }, { $set: { status: newStatus } })
+  }
+
   async delete(id?: string) {
     return await ExpenseModel.findByIdAndDelete(id)
   }

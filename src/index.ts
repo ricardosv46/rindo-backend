@@ -12,6 +12,7 @@ import { areaRoute } from './routes/areaRoute'
 import { expenseRoute } from './routes/expenseRoute'
 import { getOcrData } from './controllers/ocrController'
 import { multipleFileUpload } from './middlewares/multiplefiles'
+import { reportRoute } from './routes/reportRoute'
 
 dotenv.config()
 const app = express()
@@ -44,6 +45,7 @@ app.use('/users', userRoute)
 app.use('/companies', companyRoute)
 app.use('/areas', areaRoute)
 app.use('/expenses', expenseRoute)
+app.use('/reports', reportRoute)
 
 // app.use('/spends', routerSpend)
 // app.use('/reports', routerReport)
