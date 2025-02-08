@@ -1,4 +1,4 @@
-import { IExpenseRequest } from '../interfaces/expense'
+import { IExpenseRequest, StatusExpense } from '../interfaces/expense'
 import { ExpenseModel } from '../models/expenseSchema'
 
 export class ExpenseRepository {
@@ -23,7 +23,7 @@ export class ExpenseRepository {
     return await ExpenseModel.findByIdAndUpdate(expense?.id, expense, { new: true })
   }
 
-  async updateStatus(expenseIds: string[], newStatus: string) {
+  async updateStatus(expenseIds: string[], newStatus: StatusExpense) {
     return await ExpenseModel.updateMany({ _id: { $in: expenseIds } }, { $set: { status: newStatus } })
   }
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { responseData } from '../helpers/response'
+import { responseData, responseError } from '../helpers/response'
 import { ReportRepository } from '../repositories/reportRepository'
 import dayjs from 'dayjs'
 import { ExpenseRepository } from '../repositories/expenseRepository'
@@ -71,6 +71,46 @@ export const createReport = async (req: Request, res: Response) => {
     await expenseRepository.updateStatus(expenses, 'IN_REPORT')
 
     res.json(responseData(true, 'Éxito crear el informe', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const updateReport = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const { name, expenses } = req.body
+
+    const report = await reportRepository.getById(id)
+    if (!report) return responseError('El informe no existe', 404)
+
+    const currentExpensesChange = report?.expenses?.filter((i) => !expenses?.includes(i)).map((i) => String(i))
+    await expenseRepository.updateStatus(currentExpensesChange!, 'DRAFT')
+    await expenseRepository.updateStatus(expenses!, 'IN_REPORT')
+
+    report.name = name || report.name || ''
+    report.expenses = expenses || report.expenses || []
+    await report.save()
+
+    res.json(responseData(true, 'Éxito crear el informe', report))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const deleteReport = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const data = await reportRepository.delete(id)
+    if (!data) return responseError('El gasto no existe', 404)
+
+    const expenses = data?.expenses?.map((i) => String(i))
+
+    await expenseRepository.updateStatus(expenses!, 'DRAFT')
+
+    res.json(responseData(true, 'Éxito al eliminar el informe', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }

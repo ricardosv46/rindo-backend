@@ -144,8 +144,6 @@ export const updateExpense = async (req: Request, res: Response) => {
       await deleteFile(expense?.fileRxh)
     }
 
-    console.log({ description })
-
     expense.ruc = ruc || expense.ruc || ''
     expense.companyName = companyName || expense.companyName || ''
     expense.description = description || expense.description || ''
