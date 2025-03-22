@@ -15,6 +15,17 @@ export const getAreas = async (req: Request, res: Response) => {
   }
 }
 
+export const getArea = async (req: Request, res: Response) => {
+  try {
+    const { id } = req?.params
+
+    const data = await areaRepository.getById(id)
+    res.json(responseData(true, 'Éxito al obtener la area', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
 export const createArea = async (req: Request, res: Response) => {
   try {
     const createdBy = req?.user?.id

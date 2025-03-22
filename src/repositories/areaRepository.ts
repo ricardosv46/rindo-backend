@@ -10,6 +10,12 @@ export class AreaRepository {
     return await AreaModel.find({ createdBy }).populate('company')
   }
 
+  async getByApproverId(approverId: string) {
+    return await AreaModel.find({
+      'approvers.approver': approverId
+    })
+  }
+
   async create(area: IAreaRequest) {
     const newData = new AreaModel(area)
     return await newData.save()

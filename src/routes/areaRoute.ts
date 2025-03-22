@@ -1,11 +1,13 @@
 import express from 'express'
-import { addApprover, createArea, deleteApprover, deleteArea, getAreas, updateArea } from '../controllers/areaController'
+import { addApprover, createArea, deleteApprover, deleteArea, getArea, getAreas, updateArea } from '../controllers/areaController'
 import { isAuthenticated } from '../middlewares/authenticated'
 import { isValidRole } from '../middlewares/isValidRole'
 
 export const areaRoute = express.Router()
 
 areaRoute.get('/', isAuthenticated, isValidRole(['CORPORATION', 'APPROVER', 'GLOBAL_APPROVER', 'SUBMITTER']), getAreas)
+
+areaRoute.get('/:id', isAuthenticated, isValidRole(['CORPORATION', 'APPROVER', 'GLOBAL_APPROVER', 'SUBMITTER']), getArea)
 
 areaRoute.post('/create', isAuthenticated, isValidRole(['CORPORATION']), createArea)
 

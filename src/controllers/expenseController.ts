@@ -2,8 +2,14 @@ import { Request, Response } from 'express'
 import { responseData, responseError } from '../helpers/response'
 import { deleteFile, uploadFile } from '../helpers/s3'
 import { ExpenseRepository } from '../repositories/expenseRepository'
+import { Types } from 'mongoose'
+import { ReportRepository } from '../repositories/reportRepository'
+import { AreaRepository } from '../repositories/areaRepository'
+import dayjs from 'dayjs'
 
 const expenseRepository = new ExpenseRepository()
+const reportRepository = new ReportRepository()
+const areaRepository = new AreaRepository()
 
 export interface MulterFiles {
   file?: Express.Multer.File[]
@@ -173,6 +179,33 @@ export const deleteExpense = async (req: Request, res: Response) => {
     if (!data) return responseError('El gasto no existe', 404)
 
     res.json(responseData(true, 'Éxito al eliminar gasto', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
+  }
+}
+
+export const updateStatusExpense = async (req: Request, res: Response) => {
+  try {
+    const { id } = req?.params
+    const { status, expenses, comment } = req.body
+
+    if (expenses?.length === 0) return responseError('No se encontraron gastos para actualizar', 404)
+
+    const report = await reportRepository.getById(id)
+    const area = await areaRepository.getById(report?.area)
+    const approver = area?.approvers.find((i) => i.approver.toString() === req?.user?.id && i.order === report?.index)
+
+    let historyEntry = {
+      status,
+      comment: comment || '',
+      createdBy: new Types.ObjectId(req?.user?.id),
+      order: Number(approver?.order),
+      date: dayjs().format('DD-MM-YYYY')
+    }
+
+    const data = await expenseRepository.updateStatusAndHistory(expenses, status, historyEntry)
+
+    res.json(responseData(true, 'Éxito al actualizar el estado del gasto', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message, {}))
   }

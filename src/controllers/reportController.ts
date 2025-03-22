@@ -1,15 +1,73 @@
 import { Request, Response } from 'express'
 import { responseData, responseError } from '../helpers/response'
 import { ReportRepository } from '../repositories/reportRepository'
+import { AreaRepository } from '../repositories/areaRepository'
 import dayjs from 'dayjs'
 import { ExpenseRepository } from '../repositories/expenseRepository'
+import { Types } from 'mongoose'
 
 const reportRepository = new ReportRepository()
 const expenseRepository = new ExpenseRepository()
+const areaRepository = new AreaRepository()
+
 export interface MulterFiles {
   file?: Express.Multer.File[]
   fileVisa?: Express.Multer.File[]
   fileRxh?: Express.Multer.File[]
+}
+
+export const getReports = async (req: Request, res: Response) => {
+  try {
+    const { id, role } = req?.user
+
+    if (role === 'CORPORATION') {
+      const data = await reportRepository.getByCoporation(id)
+      res.json(responseData(true, 'Éxito al obtener los reportes', data))
+    }
+
+    if (role === 'SUBMITTER') {
+      const data = await reportRepository.getByCreatedBy(id)
+      res.json(responseData(true, 'Éxito al obtener los reportes', data))
+    }
+
+    if (role === 'APPROVER' || role === 'GLOBAL_APPROVER') {
+      const userAreas = await areaRepository.getByApproverId(id)
+
+      const areaOrderMap = new Map()
+      userAreas.forEach((area) => {
+        const approverData = area.approvers.find((a) => a.approver.toString() === id)
+        if (approverData) {
+          areaOrderMap.set(area.id.toString(), approverData.order)
+        }
+      })
+
+      const data = await reportRepository.getByAreaAndApproverOrder(Array.from(areaOrderMap.entries()))
+      res.json(responseData(true, 'Éxito al obtener los reportes', data))
+    }
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const getReportsApproved = async (req: Request, res: Response) => {
+  try {
+    const { id } = req?.user
+
+    const userAreas = await areaRepository.getByApproverId(id)
+
+    const areaOrderMap = new Map()
+    userAreas.forEach((area) => {
+      const approverData = area.approvers.find((a) => a.approver.toString() === id)
+      if (approverData) {
+        areaOrderMap.set(area.id.toString(), approverData.order)
+      }
+    })
+
+    const data = await reportRepository.getApproved(Array.from(areaOrderMap.entries()))
+    res.json(responseData(true, 'Éxito al obtener los reportes', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
 }
 
 export const getReport = async (req: Request, res: Response) => {
@@ -22,24 +80,11 @@ export const getReport = async (req: Request, res: Response) => {
   }
 }
 
-export const getReports = async (req: Request, res: Response) => {
+export const getReportWithExpenses = async (req: Request, res: Response) => {
   try {
-    const { id, role } = req?.user
-
-    if (role == 'CORPORATION') {
-      const data = await reportRepository.getByCoporation(id)
-      res.json(responseData(true, 'Éxito al obtener los reportes', data))
-    }
-
-    if (role == 'SUBMITTER') {
-      const data = await reportRepository.getByCreatedBy(id)
-      res.json(responseData(true, 'Éxito al obtener los reportes', data))
-    }
-
-    if (role == 'APPROVER') {
-      const data = await reportRepository.getByCreatedBy(id)
-      res.json(responseData(true, 'Éxito al obtener los reportes', data))
-    }
+    const { id } = req.params
+    const data = await reportRepository.getByIdWithExpenses(id)
+    res.json(responseData(true, 'Éxito al obtener el reporte', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }
@@ -94,6 +139,75 @@ export const updateReport = async (req: Request, res: Response) => {
     await report.save()
 
     res.json(responseData(true, 'Éxito crear el informe', report))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const updateReportSendProcess = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const report = await reportRepository.getById(id)
+    if (!report) return responseError('El informe no existe', 404)
+
+    report.index = 1
+    report.status = 'IN_PROCESS'
+    report.history = report.history || []
+    report.history.push({
+      status: 'SENT',
+      createdBy: new Types.ObjectId(req?.user?.id),
+      comment: 'El informe se ha enviado'
+    })
+    await report.save()
+
+    res.json(responseData(true, 'Éxito al enviar el informe', report))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const updateReportApprove = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const report = await reportRepository.getById(id)
+
+    const area = await areaRepository.getById(report?.area)
+
+    const approver = area?.approvers.find((i) => i.approver.toString() === req?.user?.id && i.order === report?.index)
+
+    const maxIndex = area?.approvers.length
+
+    const AllexpensesApproved = report?.expenses?.every((i) => i.status === 'APPROVED')
+
+    if (!AllexpensesApproved) return responseError('Todos los gastos deben ser aprobados', 400)
+
+    if (!approver) return responseError('No tienes permisos para aprobar este informe', 403)
+
+    if (!report) return responseError('El informe no existe', 404)
+    report.history = report.history || []
+    if (report.index === maxIndex) {
+      report.status = 'CLOSED'
+      report.history.push({
+        status: 'CLOSED',
+        createdBy: new Types.ObjectId(req?.user?.id),
+        comment: 'El informe se ha cerrado'
+      })
+    } else {
+      const expenses = report?.expenses?.map((i) => String(i))
+      await expenseRepository.updateStatus(expenses!, 'IN_REPORT')
+      report.status = 'IN_PROCESS'
+      report.history.push({
+        status: 'APPROVED',
+        createdBy: new Types.ObjectId(req?.user?.id),
+        comment: 'El informe se ha aprobado'
+      })
+    }
+    report.index = report.index! + 1
+    await report.save()
+
+    res.json(responseData(true, 'Éxito al enviar el informe', report))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }

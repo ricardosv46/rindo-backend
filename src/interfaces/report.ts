@@ -12,6 +12,13 @@ export interface IReportResponse extends Omit<Document, '__v'> {
   corporation?: Types.ObjectId
   currentApprover?: Types.ObjectId
   expenses?: IExpense[]
+  history?: IReportHistory[]
+}
+
+export interface IReportHistory {
+  status: ReportHistoryStatus
+  createdBy: Types.ObjectId
+  comment?: string
 }
 
 export interface IReportRequest {
@@ -21,3 +28,5 @@ export interface IReportRequest {
 }
 
 export type ReportStatus = 'OBSERVED' | 'DRAFT' | 'CLOSED' | 'IN_PROCESS'
+
+export type ReportHistoryStatus = 'SENT' | 'CLOSED' | 'APPROVED' | 'OBSERVED'

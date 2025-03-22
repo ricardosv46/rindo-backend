@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
 import { IExpense } from './expenseSchema'
-import { ReportStatus } from '../interfaces/report'
+import { IReportHistory, ReportStatus } from '../interfaces/report'
 
 export interface IReport extends Document {
   id: string
@@ -14,6 +14,7 @@ export interface IReport extends Document {
   corporation?: string
   currentApprover?: string
   expenses?: IExpense[]
+  history?: IReportHistory[]
 }
 
 const ReportSchema = new Schema({
@@ -46,6 +47,23 @@ const ReportSchema = new Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Expense',
       required: true
+    }
+  ],
+  history: [
+    {
+      status: {
+        type: String,
+        enum: ['SENT', 'CLOSED', 'APPROVED', 'OBSERVED'],
+        required: true
+      },
+      comment: {
+        type: String,
+        default: ''
+      },
+      createdBy: {
+        type: Types.ObjectId,
+        ref: 'User'
+      }
     }
   ]
 })

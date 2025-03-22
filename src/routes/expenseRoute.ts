@@ -1,5 +1,5 @@
 import express from 'express'
-import { createExpense, deleteExpense, getExpense, getExpenses, updateExpense } from '../controllers/expenseController'
+import { createExpense, deleteExpense, getExpense, getExpenses, updateExpense, updateStatusExpense } from '../controllers/expenseController'
 import { isAuthenticated } from '../middlewares/authenticated'
 import { isValidRole } from '../middlewares/isValidRole'
 import { multipleFileUpload } from '../middlewares/multiplefiles'
@@ -18,3 +18,5 @@ expenseRoute.delete('/:id/delete', isAuthenticated, isValidRole(['SUBMITTER']), 
 expenseRoute.get('/:id', isAuthenticated, isValidRole(['SUBMITTER']), getExpense)
 
 expenseRoute.put('/:id/update', isAuthenticated, isValidRole(['SUBMITTER']), multipleFileUpload, updateExpense)
+
+expenseRoute.put('/:id/status', isAuthenticated, isValidRole(['APPROVER', 'GLOBAL_APPROVER']), updateStatusExpense)

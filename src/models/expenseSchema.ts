@@ -101,12 +101,17 @@ const ExpenseSchema = new Schema({
     {
       status: {
         type: String,
-        enum: ['PENDING', 'APPROVED', 'REJECTED', 'IN_REVISION'],
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'IN_REVIEW'],
         required: true
       },
       comment: {
         type: String,
         default: ''
+      },
+      date: {
+        type: String,
+        required: true,
+        trim: true
       },
       order: {
         type: Number,

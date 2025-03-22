@@ -43,8 +43,7 @@ export type StatusExpense = 'IN_REPORT' | 'APPROVED' | 'DRAFT' | 'REJECTED' | 'I
 export type StatusExpenseHistory = 'PENDING' | 'APPROVED' | 'REJECTED' | 'IN_REVISION'
 
 export interface HistoryExpense {
-  status?: StatusExpenseHistory
+  status: StatusExpenseHistory
   comment?: string
-  order?: number
-  createdBy?: string
+  createdBy: Types.ObjectId
 }
