@@ -25,9 +25,14 @@ reportRoute.post('/create', isAuthenticated, isValidRole(['SUBMITTER']), createR
 
 reportRoute.delete('/:id/delete', isAuthenticated, isValidRole(['SUBMITTER']), deleteReport)
 
-reportRoute.get('/:id', isAuthenticated, isValidRole(['SUBMITTER', 'APPROVER', 'GLOBAL_APPROVER']), getReport)
+reportRoute.get('/:id', isAuthenticated, isValidRole(['SUBMITTER', 'APPROVER', 'GLOBAL_APPROVER', 'CORPORATION']), getReport)
 
-reportRoute.get('/:id/expenses', isAuthenticated, isValidRole(['SUBMITTER', 'APPROVER', 'GLOBAL_APPROVER']), getReportWithExpenses)
+reportRoute.get(
+  '/:id/expenses',
+  isAuthenticated,
+  isValidRole(['SUBMITTER', 'APPROVER', 'GLOBAL_APPROVER', 'CORPORATION']),
+  getReportWithExpenses
+)
 
 reportRoute.put('/:id/update', isAuthenticated, isValidRole(['SUBMITTER']), updateReport)
 

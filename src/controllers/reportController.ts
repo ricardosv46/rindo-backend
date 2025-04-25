@@ -5,6 +5,8 @@ import { AreaRepository } from '../repositories/areaRepository'
 import dayjs from 'dayjs'
 import { ExpenseRepository } from '../repositories/expenseRepository'
 import { Types } from 'mongoose'
+import { filtersDTO } from '../helpers/filtersDTO'
+import { convertToDate } from '../helpers/date'
 
 const reportRepository = new ReportRepository()
 const expenseRepository = new ExpenseRepository()
@@ -19,14 +21,14 @@ export interface MulterFiles {
 export const getReports = async (req: Request, res: Response) => {
   try {
     const { id, role } = req?.user
-
+    const filters = filtersDTO(req.query)
     if (role === 'CORPORATION') {
-      const data = await reportRepository.getByCoporation(id)
+      const data = await reportRepository.getByCoporationFilter(id, filters)
       res.json(responseData(true, 'Éxito al obtener los reportes', data))
     }
 
     if (role === 'SUBMITTER') {
-      const data = await reportRepository.getByCreatedBy(id)
+      const data = await reportRepository.getByCreatedByFilter(id, filters)
       res.json(responseData(true, 'Éxito al obtener los reportes', data))
     }
 
@@ -41,7 +43,7 @@ export const getReports = async (req: Request, res: Response) => {
         }
       })
 
-      const data = await reportRepository.getByAreaAndApproverOrder(Array.from(areaOrderMap.entries()))
+      const data = await reportRepository.getByAreaAndApproverOrderFilter(Array.from(areaOrderMap.entries()), filters)
       res.json(responseData(true, 'Éxito al obtener los reportes', data))
     }
   } catch (error: any) {
@@ -52,6 +54,7 @@ export const getReports = async (req: Request, res: Response) => {
 export const getReportsApproved = async (req: Request, res: Response) => {
   try {
     const { id } = req?.user
+    const filters = filtersDTO(req.query)
 
     const userAreas = await areaRepository.getByApproverId(id)
 
@@ -63,7 +66,7 @@ export const getReportsApproved = async (req: Request, res: Response) => {
       }
     })
 
-    const data = await reportRepository.getApproved(Array.from(areaOrderMap.entries()))
+    const data = await reportRepository.getApprovedFilter(Array.from(areaOrderMap.entries()), filters)
     res.json(responseData(true, 'Éxito al obtener los reportes', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
@@ -83,6 +86,7 @@ export const getReport = async (req: Request, res: Response) => {
 export const getReportWithExpenses = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+
     const data = await reportRepository.getByIdWithExpenses(id)
     res.json(responseData(true, 'Éxito al obtener el reporte', data))
   } catch (error: any) {
@@ -98,8 +102,8 @@ export const createReport = async (req: Request, res: Response) => {
     const corporation = req?.user?.createdBy
     const area = req?.user?.areas[0]?._id
     const company = req?.user?.company?._id
-
     const created = dayjs().format('DD/MM/YYYY')
+    const dateObj = convertToDate(created).toISOString()
 
     const props = {
       createdBy,
@@ -107,6 +111,7 @@ export const createReport = async (req: Request, res: Response) => {
       area,
       company,
       name,
+      dateFormat: dateObj, // Guardar el objeto Date
       expenses,
       created
     }
@@ -179,9 +184,9 @@ export const updateReportApprove = async (req: Request, res: Response) => {
 
     const maxIndex = area?.approvers.length
 
-    const AllexpensesApproved = report?.expenses?.every((i) => i.status === 'APPROVED')
+    // const AllexpensesApproved = report?.expenses?.every((i) => i.status === 'APPROVED' || i.status === 'REJECTED')
 
-    if (!AllexpensesApproved) return responseError('Todos los gastos deben ser aprobados', 400)
+    // if (!AllexpensesApproved) return responseError('Todos los gastos deben ser aprobados o rechazados', 400)
 
     if (!approver) return responseError('No tienes permisos para aprobar este informe', 403)
 

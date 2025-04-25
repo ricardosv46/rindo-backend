@@ -9,6 +9,7 @@ export interface IExpenseResponse extends Omit<Document, '__v'> {
   currency?: string
   serie?: string
   date?: string
+  dateFormat?: Date
   typeDocument?: string
   createdBy?: Types.ObjectId
   urlFile?: string
@@ -32,6 +33,7 @@ export interface IExpenseRequest {
   currency?: string
   serie?: string
   date?: string
+  dateFormat?: string
   typeDocument?: string
   urlFile?: string
   urlFileVisa?: string

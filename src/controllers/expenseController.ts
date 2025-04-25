@@ -5,7 +5,9 @@ import { ExpenseRepository } from '../repositories/expenseRepository'
 import { Types } from 'mongoose'
 import { ReportRepository } from '../repositories/reportRepository'
 import { AreaRepository } from '../repositories/areaRepository'
+import { convertToDate } from '../helpers/date'
 import dayjs from 'dayjs'
+import { filtersDTO } from '../helpers/filtersDTO'
 
 const expenseRepository = new ExpenseRepository()
 const reportRepository = new ReportRepository()
@@ -32,14 +34,66 @@ export const getExpenses = async (req: Request, res: Response) => {
     const { id, role } = req?.user
 
     if (role == 'CORPORATION') {
-      const data = await expenseRepository.getByCoporation(id)
+      const { search, from, to, pageSize, pageIndex } = req.query
+      const data = await expenseRepository.getByCoporationFilter(id, {
+        search: search as string,
+        from: from as string,
+        to: to as string,
+        pageSize: Number(pageSize),
+        pageIndex: Number(pageIndex)
+      })
       res.json(responseData(true, 'Éxito al obtener los gastos', data))
     }
-
     if (role == 'SUBMITTER') {
-      const data = await expenseRepository.getByCreatedBy(id)
+      const { search, from, to, pageSize, pageIndex } = req.query
+      const data = await expenseRepository.getByCreatedByWithoutReviewFilter(id, {
+        search: search as string,
+        from: from as string,
+        to: to as string,
+        pageSize: Number(pageSize),
+        pageIndex: Number(pageIndex)
+      })
       res.json(responseData(true, 'Éxito al obtener los gastos', data))
     }
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+export const getExpensesReview = async (req: Request, res: Response) => {
+  try {
+    const { id, role } = req?.user
+    const filters = filtersDTO(req.query)
+    const data = await expenseRepository.getByCreatedByReviewFilter(id, filters)
+    res.json(responseData(true, 'Éxito al obtener los gastos', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const getExpensesDraft = async (req: Request, res: Response) => {
+  try {
+    const { id, role } = req?.user
+
+    const filters = filtersDTO(req.query)
+    const data = await expenseRepository.getByCreatedByDraftFilter(id, filters)
+
+    res.json(responseData(true, 'Éxito al obtener los gastos', data))
+  } catch (error: any) {
+    res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
+  }
+}
+
+export const getExpensesByReportIdDraft = async (req: Request, res: Response) => {
+  try {
+    const { id } = req?.user
+    const { id: reportId } = req.params
+    const filters = filtersDTO(req.query)
+    const report = await reportRepository.getById(reportId as string)
+    if (!report) return responseError('El reporte no existe', 404)
+    const expenses = report?.expenses?.map((i) => String(i)) || []
+    const data = await expenseRepository.getByReportIdDraftFilter(id, expenses, filters)
+
+    res.json(responseData(true, 'Éxito al obtener los gastos', data))
   } catch (error: any) {
     res.status(error?.statusCode ?? 500).json(responseData(false, error.message))
   }
@@ -79,6 +133,9 @@ export const createExpense = async (req: Request, res: Response) => {
       fileRxh = upload?.Location || ''
     }
 
+    // Convertir la fecha a objeto Date usando el helper
+    const dateObj = convertToDate(date).toISOString()
+
     const props = {
       ruc,
       companyName,
@@ -86,7 +143,8 @@ export const createExpense = async (req: Request, res: Response) => {
       category,
       total: total.replace(',', ''),
       currency,
-      date,
+      date, // Mantener el string original
+      dateFormat: dateObj, // Guardar el objeto Date
       typeDocument,
       createdBy,
       area,
@@ -110,7 +168,7 @@ export const updateExpense = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
 
-    const { ruc, companyName, description, category, total, currency, date, typeDocument, serie } = req.body
+    const { ruc, companyName, description, category, total, currency, date, typeDocument, serie, status } = req.body
 
     const files = req.files as unknown as MulterFiles
 
@@ -150,6 +208,8 @@ export const updateExpense = async (req: Request, res: Response) => {
       await deleteFile(expense?.fileRxh)
     }
 
+    const dateObj = convertToDate(date).toISOString()
+
     expense.ruc = ruc || expense.ruc || ''
     expense.companyName = companyName || expense.companyName || ''
     expense.description = description || expense.description || ''
@@ -157,6 +217,7 @@ export const updateExpense = async (req: Request, res: Response) => {
     expense.total = total?.replace(',', '') || expense.total || ''
     expense.currency = currency || expense.currency || ''
     expense.date = date || expense.date || ''
+    expense.dateFormat = dateObj || expense.dateFormat || ''
     expense.typeDocument = typeDocument || expense.typeDocument || ''
     expense.serie = serie || expense.serie || ''
     expense.file = file || expense.file || ''
@@ -164,6 +225,20 @@ export const updateExpense = async (req: Request, res: Response) => {
     expense.fileRxh = fileRxh || expense.fileRxh || ''
 
     await expense.save()
+
+    if (status === 'IN_REVIEW') {
+      // await expenseRepository.updateStatus([id], 'IN_REPORT')
+
+      const historyEntry = {
+        status: 'IN_REPORT',
+        comment: '',
+        createdBy: new Types.ObjectId(req?.user?.id),
+        order: 0,
+        date: dayjs().format('DD-MM-YYYY')
+      }
+
+      await expenseRepository.updateStatusAndHistory([id], 'IN_REPORT', historyEntry)
+    }
 
     res.json(responseData(true, 'Éxito al actualizar el gasto', expense))
   } catch (error: any) {

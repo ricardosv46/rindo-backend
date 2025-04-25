@@ -11,6 +11,7 @@ export interface IExpense extends Document {
   currency?: string
   serie?: string
   date?: string
+  dateFormat?: string
   typeDocument?: string
   createdBy?: string
   file?: string
@@ -75,15 +76,19 @@ const ExpenseSchema = new Schema({
     required: true,
     trim: true
   },
+  dateFormat: {
+    type: String,
+    required: true,
+    trim: true
+  },
   typeDocument: {
     type: String,
     required: true,
     trim: true
   },
-
   status: {
     type: String,
-    enum: ['IN_REPORT', 'APPROVED', 'DRAFT', 'REJECTED', 'IN_REVISION'],
+    enum: ['IN_REPORT', 'APPROVED', 'DRAFT', 'REJECTED', 'IN_REVIEW'],
     default: 'DRAFT'
   },
 

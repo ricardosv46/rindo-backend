@@ -25,7 +25,13 @@ export const io = new SocketServer(server, {
 })
 
 app.use(express.json())
-const whitelist = ['http://localhost:3000', 'http://localhost:4000', 'http://localhost:5000', 'http://localhost:5001']
+const whitelist = [
+  'http://localhost:3000',
+  'http://localhost:4000',
+  'http://localhost:5000',
+  'http://localhost:5001',
+  'http://192.168.1.67:5000'
+]
 
 const corsOptions: CorsOptions = {
   origin: function (origin, callback) {

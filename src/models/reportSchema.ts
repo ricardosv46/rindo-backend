@@ -37,6 +37,11 @@ const ReportSchema = new Schema({
     required: true,
     trim: true
   },
+  dateFormat: {
+    type: String,
+    required: true,
+    trim: true
+  },
   createdBy: { type: Types.ObjectId, ref: 'User', required: true },
   corporation: { type: Types.ObjectId, ref: 'User', required: true },
   currentApprover: { type: Types.ObjectId, ref: 'User' },
